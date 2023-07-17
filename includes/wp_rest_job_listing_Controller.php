@@ -128,6 +128,13 @@ class WP_REST_job_listing_Controller extends WP_REST_Controller {
 		);
 	}
 
+	/* Authonticate API Key */
+	public function authontication_using_apikey(  $request  ){
+		$api_key = $request->get_header( 'X-API-Key' );
+		$valid_keys = array( 'sfhjkhfdsfsdhfhdshfskhfkhskhfhssdjfhh' ); 
+		return in_array( $api_key, $valid_keys );
+	}
+
 	/**
 	 * Checks if a given request has access to read posts.
 	 *
@@ -138,10 +145,10 @@ class WP_REST_job_listing_Controller extends WP_REST_Controller {
 	 */
 	public function get_items_permissions_check( $request ) {
 
-
+		if ( !$this->authontication_using_apikey( $request ) ) {
+            return new WP_Error( 'invalid_api_key', 'Invalid API Key.', array( 'status' => 401 ) );
+        }
 		
-
-
 		$post_type = get_post_type_object( $this->post_type );
 
 		if ( 'edit' === $request['context'] && ! current_user_can( $post_type->cap->edit_posts ) ) {
@@ -467,6 +474,10 @@ class WP_REST_job_listing_Controller extends WP_REST_Controller {
 	 * @return true|WP_Error True if the request has read access for the item, WP_Error object otherwise.
 	 */
 	public function get_item_permissions_check( $request ) {
+
+		if ( !$this->authontication_using_apikey( $request ) ) {
+            return new WP_Error( 'invalid_api_key', 'Invalid API Key.', array( 'status' => 401 ) );
+        }
 
 		$post = $this->get_post( $request['id'] );
 
