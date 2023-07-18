@@ -129,11 +129,15 @@ class WP_REST_job_listing_Controller extends WP_REST_Controller {
 	}
 
 	/* Authonticate API Key */
+
+	/* <--------- Edits from DEVOP1 START {17-07-2023} --------> */
 	public function authontication_using_apikey(  $request  ){
 		$api_key = $request->get_header( 'X-API-Key' );
 		$valid_keys = array( 'sfhjkhfdsfsdhfhdshfskhfkhskhfhssdjfhh' ); 
 		return in_array( $api_key, $valid_keys );
 	}
+	/** <--------- Edits from DEVOP1 END {17-07-2023} --------> */
+	
 
 	/**
 	 * Checks if a given request has access to read posts.
@@ -145,9 +149,12 @@ class WP_REST_job_listing_Controller extends WP_REST_Controller {
 	 */
 	public function get_items_permissions_check( $request ) {
 
+		/* <--------- Edits from DEVOP1 START {17-07-2023} --------> */
 		if ( !$this->authontication_using_apikey( $request ) ) {
             return new WP_Error( 'invalid_api_key', 'Invalid API Key.', array( 'status' => 401 ) );
         }
+		/** <--------- Edits from DEVOP1 END {17-07-2023} --------> */
+
 		
 		$post_type = get_post_type_object( $this->post_type );
 
@@ -475,9 +482,11 @@ class WP_REST_job_listing_Controller extends WP_REST_Controller {
 	 */
 	public function get_item_permissions_check( $request ) {
 
+		/* <--------- Edits from DEVOP1 START {17-07-2023} --------> */
 		if ( !$this->authontication_using_apikey( $request ) ) {
             return new WP_Error( 'invalid_api_key', 'Invalid API Key.', array( 'status' => 401 ) );
         }
+		/* <--------- Edits from DEVOP1 END {17-07-2023} --------> */
 
 		$post = $this->get_post( $request['id'] );
 
@@ -613,13 +622,18 @@ class WP_REST_job_listing_Controller extends WP_REST_Controller {
 			);
 		}
 
-		if ( ! current_user_can( $post_type->cap->create_posts ) ) {
-			return new WP_Error(
-				'rest_cannot_create',
-				__( 'Sorry, you are not allowed to create posts as this user.' ),
-				array( 'status' => rest_authorization_required_code() )
-			);
+		// if ( ! current_user_can( $post_type->cap->create_posts ) ) {
+		// 	return new WP_Error(
+		// 		'rest_cannot_create',
+		// 		__( 'Sorry, you are not allowed to create posts as this user.' ),
+		// 		array( 'status' => rest_authorization_required_code() )
+		// 	);
+		// }
+		
+		if ( !$this->authontication_using_apikey( $request ) ) {
+			return new WP_Error( 'invalid_api_key', 'Invalid API Key.', array( 'status' => 401 ) );
 		}
+		
 
 		if ( ! $this->check_assign_terms_permission( $request ) ) {
 			return new WP_Error(
@@ -800,12 +814,16 @@ class WP_REST_job_listing_Controller extends WP_REST_Controller {
 
 		$post_type = get_post_type_object( $this->post_type );
 
-		if ( $post && ! $this->check_update_permission( $post ) ) {
-			return new WP_Error(
-				'rest_cannot_edit',
-				__( 'Sorry, you are not allowed to edit this post.' ),
-				array( 'status' => rest_authorization_required_code() )
-			);
+		// if ( $post && ! $this->check_update_permission( $post ) ) {
+		// 	return new WP_Error(
+		// 		'rest_cannot_edit',
+		// 		__( 'Sorry, you are not allowed to edit this post.' ),
+		// 		array( 'status' => rest_authorization_required_code() )
+		// 	);
+		// }
+
+		if ( $post && ! $this->authontication_using_apikey( $request ) ) {
+			return new WP_Error( 'invalid_api_key', 'Invalid API Key.', array( 'status' => 401 ) );
 		}
 
 		if ( ! empty( $request['author'] ) && get_current_user_id() !== $request['author'] && ! current_user_can( $post_type->cap->edit_others_posts ) ) {
@@ -970,14 +988,22 @@ class WP_REST_job_listing_Controller extends WP_REST_Controller {
 			return $post;
 		}
 
-		if ( $post && ! $this->check_delete_permission( $post ) ) {
+		if ( !$post ) {
 			return new WP_Error(
-				'rest_cannot_delete',
-				__( 'Sorry, you are not allowed to delete this post.' ),
+				'post_not_found',
+				__( 'Sorry sagar, This post not found' ),
 				array( 'status' => rest_authorization_required_code() )
 			);
 		}
 
+		if ( !$this->authontication_using_apikey( $request ) ) {
+			return new WP_Error( 'invalid_api_key', 'Invalid API Key.', array( 'status' => 401 ) );
+		}
+
+		// if ( !$this->authontication_using_apikey( $request ) ) {
+        //     return new WP_Error( 'invalid_api_key', 'Invalid API Key.', array( 'status' => 401 ) );
+        // }
+		
 		return true;
 	}
 
@@ -1024,12 +1050,16 @@ class WP_REST_job_listing_Controller extends WP_REST_Controller {
 		 */
 		$supports_trash = apply_filters( "rest_{$this->post_type}_trashable", $supports_trash, $post );
 
-		if ( ! $this->check_delete_permission( $post ) ) {
-			return new WP_Error(
-				'rest_user_cannot_delete_post',
-				__( 'Sorry, you are not allowed to delete this post.' ),
-				array( 'status' => rest_authorization_required_code() )
-			);
+		// if ( ! $this->check_delete_permission( $post ) ) {
+		// 	return new WP_Error(
+		// 		'rest_user_cannot_delete_post',
+		// 		__( 'Sorry, you are not allowed to delete this post.' ),
+		// 		array( 'status' => rest_authorization_required_code() )
+		// 	);
+		// }
+
+		if ( !$this->authontication_using_apikey( $request ) ) {
+			return new WP_Error( 'invalid_api_key', 'Invalid API Key.', array( 'status' => 401 ) );
 		}
 
 		$request->set_param( 'context', 'edit' );
@@ -1450,13 +1480,13 @@ class WP_REST_job_listing_Controller extends WP_REST_Controller {
 				break;
 			case 'publish':
 			case 'future':
-				if ( ! current_user_can( $post_type->cap->publish_posts ) ) {
-					return new WP_Error(
-						'rest_cannot_publish',
-						__( 'Sorry, you are not allowed to publish posts in this post type.' ),
-						array( 'status' => rest_authorization_required_code() )
-					);
-				}
+				// if ( ! current_user_can( $post_type->cap->publish_posts ) ) {
+				// 	return new WP_Error(
+				// 		'rest_cannot_publish',
+				// 		__( 'Sorry, you are not allowed to publish posts in this post type.' ),
+				// 		array( 'status' => rest_authorization_required_code() )
+				// 	);
+				// }
 				break;
 			default:
 				if ( ! get_post_status_object( $post_status ) ) {
