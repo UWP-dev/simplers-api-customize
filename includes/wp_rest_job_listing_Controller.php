@@ -129,15 +129,59 @@ class WP_REST_job_listing_Controller extends WP_REST_Controller {
 	}
 
 	/* Authonticate API Key */
+	// public function authontication_using_apikey(  $request  ){
+	// 	$api_key = $request->get_header( 'X-API-Key' );
+	// 	$valid_keys = array( 'sfhjkhfdsfsdhfhdshfskhfkhskhfhssdjfhh' ); 
+	// 	return in_array( $api_key, $valid_keys );
+	// }
 
-	/* <--------- Edits from DEVOP1 START {17-07-2023} --------> */
-	public function authontication_using_apikey(  $request  ){
+	public function authontication_using_apikey_oldd(  $request  ){
 		$api_key = $request->get_header( 'X-API-Key' );
 		$valid_keys = array( 'sfhjkhfdsfsdhfhdshfskhfkhskhfhssdjfhh' ); 
 		return in_array( $api_key, $valid_keys );
 	}
-	/** <--------- Edits from DEVOP1 END {17-07-2023} --------> */
+
+	public function authontication_using_apikey($request) {
+        // Perform bearer token validation and authentication logic
+        $token = $request->get_header('Authorization');
+		$token = $this->extract_token($token);
+
+
+        // Validate and authenticate the token
+        if ($this->token_checker($token)) {
+            return new WP_Error(
+                'rest_unauthorized',
+                __('Unauthorized.', 'my-plugin'),
+                ['status' => 401]
+            );
+        }
+
+        return true; // Authentication successful
+    }
+
+	// <--------- Edits from DEVOP1 {18-7-2023} -------->
+
+	private function extract_token($header) {
+		$pattern = '/Bearer\s+(.*)$/i';
+		preg_match($pattern, $header, $matches);
 	
+		if (!empty($matches[1])) {
+			return $matches[1];
+		}
+	
+		return null;
+	}
+
+// <--------- Edits from DEVOP1 {18-7-2023} -------->
+	public function token_checker($token){
+
+		if($token == "sadhghjasgdjhasgdjasdasdtest"){
+		//	return true;
+		}else{
+			return false;
+		}
+	}
+
 
 	/**
 	 * Checks if a given request has access to read posts.
@@ -149,12 +193,9 @@ class WP_REST_job_listing_Controller extends WP_REST_Controller {
 	 */
 	public function get_items_permissions_check( $request ) {
 
-		/* <--------- Edits from DEVOP1 START {17-07-2023} --------> */
 		if ( !$this->authontication_using_apikey( $request ) ) {
             return new WP_Error( 'invalid_api_key', 'Invalid API Key.', array( 'status' => 401 ) );
         }
-		/** <--------- Edits from DEVOP1 END {17-07-2023} --------> */
-
 		
 		$post_type = get_post_type_object( $this->post_type );
 
@@ -482,11 +523,9 @@ class WP_REST_job_listing_Controller extends WP_REST_Controller {
 	 */
 	public function get_item_permissions_check( $request ) {
 
-		/* <--------- Edits from DEVOP1 START {17-07-2023} --------> */
 		if ( !$this->authontication_using_apikey( $request ) ) {
             return new WP_Error( 'invalid_api_key', 'Invalid API Key.', array( 'status' => 401 ) );
         }
-		/* <--------- Edits from DEVOP1 END {17-07-2023} --------> */
 
 		$post = $this->get_post( $request['id'] );
 
@@ -604,43 +643,13 @@ class WP_REST_job_listing_Controller extends WP_REST_Controller {
 			);
 		}
 
-		$post_type = get_post_type_object( $this->post_type );
-
-		if ( ! empty( $request['author'] ) && get_current_user_id() !== $request['author'] && ! current_user_can( $post_type->cap->edit_others_posts ) ) {
-			return new WP_Error(
-				'rest_cannot_edit_others',
-				__( 'Sorry, you are not allowed to create posts as this user.' ),
-				array( 'status' => rest_authorization_required_code() )
-			);
+		$prepared_post = $this->prepare_item_for_database( $request );
+		//echo '----'.$prepared_post->post_title.'-----';
+		if(!isset($prepared_post->job_title)){
+			return new WP_Error( 'rest_invalid_data', __( 'Please enter job title.' ), array( 'status' => 400 ) );
 		}
-
-		if ( ! empty( $request['sticky'] ) && ! current_user_can( $post_type->cap->edit_others_posts ) && ! current_user_can( $post_type->cap->publish_posts ) ) {
-			return new WP_Error(
-				'rest_cannot_assign_sticky',
-				__( 'Sorry, you are not allowed to make posts sticky.' ),
-				array( 'status' => rest_authorization_required_code() )
-			);
-		}
-
-		// if ( ! current_user_can( $post_type->cap->create_posts ) ) {
-		// 	return new WP_Error(
-		// 		'rest_cannot_create',
-		// 		__( 'Sorry, you are not allowed to create posts as this user.' ),
-		// 		array( 'status' => rest_authorization_required_code() )
-		// 	);
-		// }
-		
-		if ( !$this->authontication_using_apikey( $request ) ) {
-			return new WP_Error( 'invalid_api_key', 'Invalid API Key.', array( 'status' => 401 ) );
-		}
-		
-
-		if ( ! $this->check_assign_terms_permission( $request ) ) {
-			return new WP_Error(
-				'rest_cannot_assign_term',
-				__( 'Sorry, you are not allowed to assign the provided terms.' ),
-				array( 'status' => rest_authorization_required_code() )
-			);
+		if(!isset($prepared_post->job_category)){
+			return new WP_Error( 'rest_invalid_data', __( 'Please enter job category.' ), array( 'status' => 400 ) );
 		}
 
 		return true;
@@ -654,6 +663,8 @@ class WP_REST_job_listing_Controller extends WP_REST_Controller {
 	 * @param WP_REST_Request $request Full details about the request.
 	 * @return WP_REST_Response|WP_Error Response object on success, or WP_Error object on failure.
 	 */
+	// <--------- Edits from DEVOP1 {18-7-2023} -------->
+
 	public function create_item( $request ) {
 		if ( ! empty( $request['id'] ) ) {
 			return new WP_Error(
@@ -662,7 +673,6 @@ class WP_REST_job_listing_Controller extends WP_REST_Controller {
 				array( 'status' => 400 )
 			);
 		}
-
 		$prepared_post = $this->prepare_item_for_database( $request );
 
 		if ( is_wp_error( $prepared_post ) ) {
@@ -670,6 +680,8 @@ class WP_REST_job_listing_Controller extends WP_REST_Controller {
 		}
 
 		$prepared_post->post_type = $this->post_type;
+
+
 
 		if ( ! empty( $prepared_post->post_name )
 			&& ! empty( $prepared_post->post_status )
@@ -691,6 +703,40 @@ class WP_REST_job_listing_Controller extends WP_REST_Controller {
 
 		$post_id = wp_insert_post( wp_slash( (array) $prepared_post ), true, false );
 
+		
+
+		if(isset($prepared_post->job_title)){
+			$job_title = $prepared_post->job_title;
+		}
+		if(isset($prepared_post->job_category)){
+			$job_category = $prepared_post->job_category;
+			update_post_meta($post_id,'Job Category',$job_category);
+		}
+		if(isset($prepared_post->job_type)){
+			$job_type =  $prepared_post->job_type;
+			update_post_meta($post_id,'Job Type',$job_type);
+		}
+		if(isset($prepared_post->job_street_address)){
+			$job_address =  $prepared_post->job_street_address;
+		}
+		if(isset($prepared_post->job_street_address_2)){
+			$job_address2 = $prepared_post->job_street_address_2;
+		}
+		if(isset($prepared_post->job_city)){
+			$job_city =  $prepared_post->job_city;
+		}
+		if(isset($prepared_post->job_state)){
+			$job_state = $prepared_post->job_state;
+		}
+		if(isset($prepared_post->job_postalcode)){
+			$job_postalcode = $prepared_post->job_postalcode;
+		}
+		if(isset($prepared_post->job_salary_perday)){
+			$job_salary =  $prepared_post->job_salary_perday;
+		}
+
+
+
 		if ( is_wp_error( $post_id ) ) {
 
 			if ( 'db_insert_error' === $post_id->get_error_code() ) {
@@ -703,6 +749,7 @@ class WP_REST_job_listing_Controller extends WP_REST_Controller {
 		}
 
 		$post = get_post( $post_id );
+
 
 		/**
 		 * Fires after a single post is created or updated via the REST API.
@@ -759,7 +806,7 @@ class WP_REST_job_listing_Controller extends WP_REST_Controller {
 			}
 		}
 
-		$post          = get_post( $post_id );
+		$post = get_post( $post_id );
 		$fields_update = $this->update_additional_fields_for_object( $post, $request );
 
 		if ( is_wp_error( $fields_update ) ) {
@@ -814,16 +861,12 @@ class WP_REST_job_listing_Controller extends WP_REST_Controller {
 
 		$post_type = get_post_type_object( $this->post_type );
 
-		// if ( $post && ! $this->check_update_permission( $post ) ) {
-		// 	return new WP_Error(
-		// 		'rest_cannot_edit',
-		// 		__( 'Sorry, you are not allowed to edit this post.' ),
-		// 		array( 'status' => rest_authorization_required_code() )
-		// 	);
-		// }
-
-		if ( $post && ! $this->authontication_using_apikey( $request ) ) {
-			return new WP_Error( 'invalid_api_key', 'Invalid API Key.', array( 'status' => 401 ) );
+		if ( $post && ! $this->check_update_permission( $post ) ) {
+			return new WP_Error(
+				'rest_cannot_edit',
+				__( 'Sorry, you are not allowed to edit this post.' ),
+				array( 'status' => rest_authorization_required_code() )
+			);
 		}
 
 		if ( ! empty( $request['author'] ) && get_current_user_id() !== $request['author'] && ! current_user_can( $post_type->cap->edit_others_posts ) ) {
@@ -988,22 +1031,14 @@ class WP_REST_job_listing_Controller extends WP_REST_Controller {
 			return $post;
 		}
 
-		if ( !$post ) {
+		if ( $post && ! $this->check_delete_permission( $post ) ) {
 			return new WP_Error(
-				'post_not_found',
-				__( 'Sorry sagar, This post not found' ),
+				'rest_cannot_delete',
+				__( 'Sorry, you are not allowed to delete this post.' ),
 				array( 'status' => rest_authorization_required_code() )
 			);
 		}
 
-		if ( !$this->authontication_using_apikey( $request ) ) {
-			return new WP_Error( 'invalid_api_key', 'Invalid API Key.', array( 'status' => 401 ) );
-		}
-
-		// if ( !$this->authontication_using_apikey( $request ) ) {
-        //     return new WP_Error( 'invalid_api_key', 'Invalid API Key.', array( 'status' => 401 ) );
-        // }
-		
 		return true;
 	}
 
@@ -1050,16 +1085,12 @@ class WP_REST_job_listing_Controller extends WP_REST_Controller {
 		 */
 		$supports_trash = apply_filters( "rest_{$this->post_type}_trashable", $supports_trash, $post );
 
-		// if ( ! $this->check_delete_permission( $post ) ) {
-		// 	return new WP_Error(
-		// 		'rest_user_cannot_delete_post',
-		// 		__( 'Sorry, you are not allowed to delete this post.' ),
-		// 		array( 'status' => rest_authorization_required_code() )
-		// 	);
-		// }
-
-		if ( !$this->authontication_using_apikey( $request ) ) {
-			return new WP_Error( 'invalid_api_key', 'Invalid API Key.', array( 'status' => 401 ) );
+		if ( ! $this->check_delete_permission( $post ) ) {
+			return new WP_Error(
+				'rest_user_cannot_delete_post',
+				__( 'Sorry, you are not allowed to delete this post.' ),
+				array( 'status' => rest_authorization_required_code() )
+			);
 		}
 
 		$request->set_param( 'context', 'edit' );
@@ -1204,6 +1235,10 @@ class WP_REST_job_listing_Controller extends WP_REST_Controller {
 		return mysql_to_rfc3339( $date_gmt );
 	}
 
+
+	// <--------- Edits from DEVOP1 {18-7-2023} -------->
+
+	
 	/**
 	 * Prepares a single post for create or update.
 	 *
@@ -1232,20 +1267,88 @@ class WP_REST_job_listing_Controller extends WP_REST_Controller {
 		// Post title.
 		if ( ! empty( $schema['properties']['title'] ) && isset( $request['title'] ) ) {
 			if ( is_string( $request['title'] ) ) {
-				$prepared_post->post_title = $request['title'];
+				$prepared_post->job_title = $request['title'];
 			} elseif ( ! empty( $request['title']['raw'] ) ) {
-				$prepared_post->post_title = $request['title']['raw'];
+				$prepared_post->job_title = $request['title']['raw'];
 			}
 		}
 
-		// Post content.
-		if ( ! empty( $schema['properties']['content'] ) && isset( $request['content'] ) ) {
-			if ( is_string( $request['content'] ) ) {
-				$prepared_post->post_content = $request['content'];
-			} elseif ( isset( $request['content']['raw'] ) ) {
-				$prepared_post->post_content = $request['content']['raw'];
+		// echo '--------------';
+		// echo '<pre>';
+		// print_r($request);
+		// echo '</pre>';
+
+		// die;
+
+
+		// Job category.
+		if ( ! empty( $schema['properties']['job_category'] ) && isset( $request['job_category'] ) ) {
+			if ( is_string( $request['job_category'] ) ) {
+				$prepared_post->job_category = $request['job_category'];
+			} elseif ( ! empty( $request['job_category']['raw'] ) ) {
+				$prepared_post->job_category = $request['job_category']['raw'];
 			}
 		}
+
+		// Job category.
+		if ( ! empty( $schema['properties']['job_type'] ) && isset( $request['job_type'] ) ) {
+			if ( is_string( $request['job_type'] ) ) {
+				$prepared_post->job_type = $request['job_type'];
+			} elseif ( ! empty( $request['job_type']['raw'] ) ) {
+				$prepared_post->job_type = $request['job_type']['raw'];
+			}
+		}
+
+
+		// Post content.
+		if ( ! empty( $schema['properties']['job_street_address'] ) && isset( $request['job_street_address'] ) ) {
+			if ( is_string( $request['job_street_address'] ) ) {
+				$prepared_post->job_street_address = $request['job_street_address'];
+			} elseif ( isset( $request['job_street_address']['raw'] ) ) {
+				$prepared_post->job_street_address = $request['job_street_address']['raw'];
+			}
+		}
+
+		if ( ! empty( $schema['properties']['job_street_address_2'] ) && isset( $request['job_street_address_2'] ) ) {
+			if ( is_string( $request['job_street_address_2'] ) ) {
+				$prepared_post->job_street_address_2 = $request['job_street_address_2'];
+			} elseif ( isset( $request['job_street_address_2']['raw'] ) ) {
+				$prepared_post->job_street_address_2 = $request['job_street_address_2']['raw'];
+			}
+		}
+
+		if ( ! empty( $schema['properties']['job_city'] ) && isset( $request['job_city'] ) ) {
+			if ( is_string( $request['job_city'] ) ) {
+				$prepared_post->job_city = $request['job_city'];
+			} elseif ( isset( $request['job_city']['raw'] ) ) {
+				$prepared_post->job_city = $request['job_city']['raw'];
+			}
+		}
+
+		if ( ! empty( $schema['properties']['job_state'] ) && isset( $request['job_state'] ) ) {
+			if ( is_string( $request['job_state'] ) ) {
+				$prepared_post->job_state = $request['job_state'];
+			} elseif ( isset( $request['job_state']['raw'] ) ) {
+				$prepared_post->job_state = $request['job_state']['raw'];
+			}
+		}
+
+		if ( ! empty( $schema['properties']['job_postalcode'] ) && isset( $request['job_postalcode'] ) ) {
+			if ( is_string( $request['job_postalcode'] ) ) {
+				$prepared_post->job_postalcode = $request['job_postalcode'];
+			} elseif ( isset( $request['job_postalcode']['raw'] ) ) {
+				$prepared_post->job_postalcode = $request['job_postalcode']['raw'];
+			}
+		}
+
+		if ( ! empty( $schema['properties']['job_salary_perday'] ) && isset( $request['job_salary_perday'] ) ) {
+			if ( is_string( $request['job_salary_perday'] ) ) {
+				$prepared_post->job_salary_perday = $request['job_salary_perday'];
+			} elseif ( isset( $request['job_salary_perday']['raw'] ) ) {
+				$prepared_post->job_salary_perday = $request['job_salary_perday']['raw'];
+			}
+		}
+
 
 		// Post excerpt.
 		if ( ! empty( $schema['properties']['excerpt'] ) && isset( $request['excerpt'] ) ) {
@@ -1480,13 +1583,13 @@ class WP_REST_job_listing_Controller extends WP_REST_Controller {
 				break;
 			case 'publish':
 			case 'future':
-				// if ( ! current_user_can( $post_type->cap->publish_posts ) ) {
-				// 	return new WP_Error(
-				// 		'rest_cannot_publish',
-				// 		__( 'Sorry, you are not allowed to publish posts in this post type.' ),
-				// 		array( 'status' => rest_authorization_required_code() )
-				// 	);
-				// }
+				if ( ! current_user_can( $post_type->cap->publish_posts ) ) {
+					return new WP_Error(
+						'rest_cannot_publish',
+						__( 'Sorry, you are not allowed to publish posts in this post type.' ),
+						array( 'status' => rest_authorization_required_code() )
+					);
+				}
 				break;
 			default:
 				if ( ! get_post_status_object( $post_status ) ) {
@@ -2248,6 +2351,54 @@ class WP_REST_job_listing_Controller extends WP_REST_Controller {
 			'type'       => 'object',
 			// Base properties for every Post.
 			'properties' => array(
+				'job_category'         => array(
+					'description' => __( "This is the job category." ),
+					'type'        => array( 'string', 'null' ),
+					'format'      => 'string',
+					'context'     => array( 'view', 'edit', 'embed' ),
+				),
+				'job_type'         => array(
+					'description' => __( "This is the job type." ),
+					'type'        => array( 'string', 'null' ),
+					'format'      => 'string',
+					'context'     => array( 'view', 'edit', 'embed' ),
+				),
+				'job_street_address'         => array(
+					'description' => __( "This field is for the street address." ),
+					'type'        => array( 'string', 'null' ),
+					'format'      => 'string',
+					'context'     => array( 'view', 'edit', 'embed' ),
+				),
+				'job_street_address_2'     => array(
+					'description' => __( "This field is for the street address." ),
+					'type'        => array( 'string', 'null' ),
+					'format'      => 'string',
+					'context'     => array( 'view', 'edit', 'embed' ),
+				),
+				'job_city'     => array(
+					'description' => __( "Please enter city name" ),
+					'type'        => array( 'string', 'null' ),
+					'format'      => 'string',
+					'context'     => array( 'view', 'edit', 'embed' ),
+				),
+				'job_state'     => array(
+					'description' => __( "Please enter County / State / Region" ),
+					'type'        => array( 'string', 'null' ),
+					'format'      => 'string',
+					'context'     => array( 'view', 'edit', 'embed' ),
+				),
+				'job_postalcode'     => array(
+					'description' => __( "Please enter Postalcode" ),
+					'type'        => array( 'string', 'null' ),
+					'format'      => 'string',
+					'context'     => array( 'view', 'edit', 'embed' ),
+				),
+				'job_salary_perday'     => array(
+					'description' => __( "Please enter Postalcode" ),
+					'type'        => array( 'string', 'null' ),
+					'format'      => 'string',
+					'context'     => array( 'view', 'edit', 'embed' ),
+				),
 				'date'         => array(
 					'description' => __( "The date the post was published, in the site's timezone." ),
 					'type'        => array( 'string', 'null' ),
