@@ -103,7 +103,7 @@
 
         //new Job_Listing_Database_Table_Handler();   
     endif;
-    // add_action( "wp_head", function(){
+     add_action( "wp_head", function(){
 
     //     //insert new data
     //     $id = Job_Listing::insert(
@@ -115,11 +115,11 @@
     //     var_dump( $id );
 
     //     //get data
-    //     $data = new Job_Listing( 250 );
-    //     pr( $data->get( "street_address" ) );
-    //     die;
+        $data = new Job_Listing( 250 );
+        pr( $data->get( "state" ) );
+        die;
 
 
-    // } );
+    } );
 
 ?>

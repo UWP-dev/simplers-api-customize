@@ -23,7 +23,7 @@ if ( ! class_exists( 'SAC_Customize', false ) ) {
 		public function includes() {
 			require_once 'includes/settings.php';
 			require_once 'includes/wp_rest_job_listing_Controller.php';
-			require_once 'includes/job_listing_db_handler.php';
+			require_once 'includes/job_listing_db_table_handler.php';
 		}
 	}	
 }
