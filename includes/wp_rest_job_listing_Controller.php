@@ -641,61 +641,6 @@ class WP_REST_job_listing_Controller extends WP_REST_Controller {
 			);
 		}
 
-		$prepared_post = $this->prepare_item_for_database( $request );
-
-
-		// echo '<pre>';
-		// print_r($prepared_post);
-		// echo '</pre>';
-
-		// die;
-
-
-		if($prepared_post->title == ""){
-			return new WP_Error( 'rest_invalid_data', __( 'Please enter job title.' ), array( 'status' => 400 ) );
-		}
-		if(sanitize_text_field($prepared_post->job_category) == ""){
-			return new WP_Error( 'rest_invalid_data', __( 'job category is invalid.' ), array( 'status' => 400 ) );
-		}
-		if(sanitize_text_field($prepared_post->job_type) == ""){
-			return new WP_Error( 'rest_invalid_data', __( 'job type is invalid.' ), array( 'status' => 400 ) );
-		}
-		if(sanitize_text_field($prepared_post->job_street_address) == ""){
-			return new WP_Error( 'rest_invalid_data', __( 'Please enter street address.' ), array( 'status' => 400 ) );
-		}
-		if(sanitize_text_field($prepared_post->job_street_address_2) == ""){
-			return new WP_Error( 'rest_invalid_data', __( 'Please enter street address 2.' ), array( 'status' => 400 ) );
-		}
-		if(sanitize_text_field($prepared_post->job_city) == ""){
-			return new WP_Error( 'rest_invalid_data', __( 'Please enter city.' ), array( 'status' => 400 ) );
-		}
-		if(sanitize_text_field($prepared_post->job_state) == ""){
-			return new WP_Error( 'rest_invalid_data', __( 'Please enter state.' ), array( 'status' => 400 ) );
-		}
-		if(sanitize_text_field($prepared_post->job_postalcode) == ""){
-			return new WP_Error( 'rest_invalid_data', __( 'Please enter postalcode.' ), array( 'status' => 400 ) );
-		}
-		if(sanitize_text_field($prepared_post->job_salary_perday) == ""){
-			return new WP_Error( 'rest_invalid_data', __( 'Please enter salary day/week.' ), array( 'status' => 400 ) );
-		}
-		if(sanitize_text_field($prepared_post->job_salary) == ""){
-			return new WP_Error( 'rest_invalid_data', __( 'Please enter salary.' ), array( 'status' => 400 ) );
-		}
-		if(sanitize_text_field($prepared_post->job_description) == ""){
-			return new WP_Error( 'rest_invalid_data', __( 'Please enter job_description.' ), array( 'status' => 400 ) );
-		}
-		if(sanitize_text_field($prepared_post->job_branch) == ""){
-			return new WP_Error( 'rest_invalid_data', __( 'Please enter Branch.' ), array( 'status' => 400 ) );
-		}
-		if(sanitize_text_field($prepared_post->job_forms_complated) == ""){
-			return new WP_Error( 'rest_invalid_data', __( 'Please enter Job forms.' ), array( 'status' => 400 ) );
-		}
-		if(sanitize_text_field($prepared_post->job_notifications_email) == ""){
-			return new WP_Error( 'rest_invalid_data', __( 'Please enter Job notification email.' ), array( 'status' => 400 ) );
-		}
-		
-		
-
 		return true;
 	}
 
@@ -740,6 +685,49 @@ public function assign_post_to_category($post_id, $category_slug) {
 			);
 		}
 		$prepared_post = $this->prepare_item_for_database( $request );
+
+		if( !isset( $prepared_post->title ) || $prepared_post->title == ""){
+			return new WP_Error( 'rest_invalid_data', __( 'Please enter job title.' ), array( 'status' => 400 ) );
+		}
+		if( !isset( $prepared_post->job_category ) || sanitize_text_field($prepared_post->job_category) == ""){
+			return new WP_Error( 'rest_invalid_data', __( 'job category is invalid.' ), array( 'status' => 400 ) );
+		}
+		if(!isset( $prepared_post->job_type ) || sanitize_text_field($prepared_post->job_type) == ""){
+			return new WP_Error( 'rest_invalid_data', __( 'job type is invalid.' ), array( 'status' => 400 ) );
+		}
+		if(!isset( $prepared_post->job_street_address ) || sanitize_text_field($prepared_post->job_street_address) == ""){
+			return new WP_Error( 'rest_invalid_data', __( 'Please enter street address.' ), array( 'status' => 400 ) );
+		}
+		if(!isset( $prepared_post->job_street_address_2 ) || sanitize_text_field($prepared_post->job_street_address_2) == ""){
+			return new WP_Error( 'rest_invalid_data', __( 'Please enter street address 2.' ), array( 'status' => 400 ) );
+		}
+		if(!isset( $prepared_post->job_city ) || sanitize_text_field($prepared_post->job_city) == ""){
+			return new WP_Error( 'rest_invalid_data', __( 'Please enter city.' ), array( 'status' => 400 ) );
+		}
+		if(!isset( $prepared_post->job_state ) || sanitize_text_field($prepared_post->job_state) == ""){
+			return new WP_Error( 'rest_invalid_data', __( 'Please enter state.' ), array( 'status' => 400 ) );
+		}
+		if(!isset( $prepared_post->job_postalcode ) || sanitize_text_field($prepared_post->job_postalcode) == ""){
+			return new WP_Error( 'rest_invalid_data', __( 'Please enter postalcode.' ), array( 'status' => 400 ) );
+		}
+		if(!isset( $prepared_post->job_salary_perday ) || sanitize_text_field($prepared_post->job_salary_perday) == ""){
+			return new WP_Error( 'rest_invalid_data', __( 'Please enter salary day/week.' ), array( 'status' => 400 ) );
+		}
+		if(!isset( $prepared_post->job_salary ) || sanitize_text_field($prepared_post->job_salary) == ""){
+			return new WP_Error( 'rest_invalid_data', __( 'Please enter salary.' ), array( 'status' => 400 ) );
+		}
+		if(!isset( $prepared_post->job_description ) || sanitize_text_field($prepared_post->job_description) == ""){
+			return new WP_Error( 'rest_invalid_data', __( 'Please enter job_description.' ), array( 'status' => 400 ) );
+		}
+		if(!isset( $prepared_post->job_branch ) || sanitize_text_field($prepared_post->job_branch) == ""){
+			return new WP_Error( 'rest_invalid_data', __( 'Please enter Branch.' ), array( 'status' => 400 ) );
+		}
+		if(!isset( $prepared_post->job_forms_complated ) || sanitize_text_field($prepared_post->job_forms_complated) == ""){
+			return new WP_Error( 'rest_invalid_data', __( 'Please enter Job forms.' ), array( 'status' => 400 ) );
+		}
+		if(!isset( $prepared_post->job_notifications_email ) || sanitize_text_field($prepared_post->job_notifications_email) == ""){
+			return new WP_Error( 'rest_invalid_data', __( 'Please enter Job notification email.' ), array( 'status' => 400 ) );
+		}
 
 		if ( is_wp_error( $prepared_post ) ) {
 			return $prepared_post;
