@@ -1801,7 +1801,8 @@ class WP_REST_job_listing_Controller extends WP_REST_Controller {
 				}
 				break;
 			default:
-				if ( ! get_post_status_object( $post_status ) ) {
+				//if ( ! get_post_status_object( $post_status ) || empty( $post_status ) ) {
+				if ( empty( $post_status ) ) {
 					$post_status = 'draft';
 				}
 				break;
