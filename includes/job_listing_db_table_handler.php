@@ -103,23 +103,23 @@
 
         //new Job_Listing_Database_Table_Handler();   
     endif;
-     add_action( "wp_head", function(){
+    //  add_action( "wp_head", function(){
 
-    //     //insert new data
-    //     $id = Job_Listing::insert(
-    //         array(
-    //             "id" => 250,
-    //             "street_address" => "sagar",
-    //         )
-    //     );
-    //     var_dump( $id );
+    // //     //insert new data
+    // //     $id = Job_Listing::insert(
+    // //         array(
+    // //             "id" => 250,
+    // //             "street_address" => "sagar",
+    // //         )
+    // //     );
+    // //     var_dump( $id );
 
-    //     //get data
-        $data = new Job_Listing( 250 );
-        pr( $data->get( "state" ) );
-        die;
+    // //     //get data
+    //     $data = new Job_Listing( 250 );
+    //     pr( $data->get( "state" ) );
+    //     die;
 
 
-    } );
+    // } );
 
 ?>
