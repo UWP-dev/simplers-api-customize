@@ -656,9 +656,22 @@ class WP_REST_job_listing_Controller extends WP_REST_Controller {
 		}
 		if(sanitize_text_field($prepared_post->job_category) == ""){
 			return new WP_Error( 'rest_invalid_data', __( 'job category is invalid.' ), array( 'status' => 400 ) );
+		}else{
+			 $jobterm = $this->term_checker(sanitize_text_field($prepared_post->job_category),'job_listing_category');
+			 if (is_wp_error($jobterm)) {
+				 $error_message = $jobterm->get_error_message();
+				 return new WP_Error( 'rest_invalid_data', __( $error_message ), array( 'status' => 400 ) );
+			 }
 		}
+
 		if(sanitize_text_field($prepared_post->job_type) == ""){
 			return new WP_Error( 'rest_invalid_data', __( 'job type is invalid.' ), array( 'status' => 400 ) );
+		}else{
+			$jobterm = $this->term_checker(sanitize_text_field($prepared_post->job_type),'job_listing_type');
+			if (is_wp_error($jobterm)) {
+				$error_message = $jobterm->get_error_message();
+				return new WP_Error( 'rest_invalid_data', __( $error_message ), array( 'status' => 400 ) );
+			}
 		}
 		if(sanitize_text_field($prepared_post->job_street_address) == ""){
 			return new WP_Error( 'rest_invalid_data', __( 'Please enter street address.' ), array( 'status' => 400 ) );
@@ -707,27 +720,37 @@ class WP_REST_job_listing_Controller extends WP_REST_Controller {
 	 * @param WP_REST_Request $request Full details about the request.
 	 * @return WP_REST_Response|WP_Error Response object on success, or WP_Error object on failure.
 	 */
-	// <--------- Edits from DEVOP1 {18-7-2023} -------->
+	// <--------- Edits from DEVOP1 {19-7-2023} -------->
 
 
 // Check if the category exists and assign the post to the category
-public function assign_post_to_category($post_id, $category_slug) {
-    // Check if the category exists
-		$category = get_category_by_slug($category_slug);
+	public function assign_post_to_category($post_id, $category_slug) {
+		// Check if the category exists
+			$category = get_category_by_slug($category_slug);
+			if ($category) {
+				// Category exists, retrieve its ID
+				$category_id = $category->term_id;
+				// Assign the post to the category
+				wp_set_post_categories($post_id, array($category_id));
+			}
+		}
+
+
+	public function term_checker($term_slug, $taxonomy) {
+		$term = get_term_by('slug', $term_slug, $taxonomy);
 		
-		if ($category) {
-			// Category exists, retrieve its ID
-			$category_id = $category->term_id;
-			
-			// Assign the post to the category
-			wp_set_post_categories($post_id, array($category_id));
-			
-			echo 'Post assigned to category: ' . $category_slug;
-		} else {
-			echo 'Category does not exist.';
+		if ($term && !is_wp_error($term)) {} else {
+			return new WP_Error( 'rest_invalid_data', __( 'job category is not exist.' ), array( 'status' => 400 ) );
 		}
 	}
 
+
+	public function assign_post_to_term($post_id, $term_slug, $taxonomy) {
+		$term = get_term_by('slug', $term_slug, $taxonomy);
+		if ($term && !is_wp_error($term)) {
+			wp_set_post_terms($post_id, array($term->term_id), $taxonomy);
+		} 
+	}
 
 
 
@@ -746,7 +769,11 @@ public function assign_post_to_category($post_id, $category_slug) {
 		}
 
 		$prepared_post->post_type = $this->post_type;
-
+		$prepared_post->post_content = $prepared_post->job_description;
+		$prepared_post->post_name = $prepared_post->title;
+		
+		
+		//$job_description =  $prepared_post->job_description;
 
 		if ( ! empty( $prepared_post->title )) {
 			/*
@@ -757,7 +784,7 @@ public function assign_post_to_category($post_id, $category_slug) {
 		
 
 			 $prepared_post->post_title = wp_unique_post_slug(
-				$prepared_post->title,
+				$prepared_post->post_name,
 				'',
 				'publish',
 				$prepared_post->post_type,
@@ -765,9 +792,8 @@ public function assign_post_to_category($post_id, $category_slug) {
 			);
 		}
 
+		 
 		$post_id = wp_insert_post( wp_slash( (array) $prepared_post ), true, false );
-
-		
 
 		if(isset($prepared_post->title)){
 			$job_title = $prepared_post->title;
@@ -775,10 +801,13 @@ public function assign_post_to_category($post_id, $category_slug) {
 		if(isset($prepared_post->job_category)){
 			$job_category = $prepared_post->job_category;
 			update_post_meta($post_id,'Job Category',$job_category);
+			$this->assign_post_to_term($post_id,$job_category,'job_listing_category');
 		}
 		if(isset($prepared_post->job_type)){
 			$job_type =  $prepared_post->job_type;
 			update_post_meta($post_id,'Job Type',$job_type);
+			$this->assign_post_to_term($post_id,$job_type,'job_listing_type');
+
 		}
 		if(isset($prepared_post->job_street_address)){
 			$job_address =  $prepared_post->job_street_address;
