@@ -814,6 +814,8 @@ class WP_REST_job_listing_Controller extends WP_REST_Controller {
 		$prepared_post->post_type = $this->post_type;
 		$prepared_post->post_content = $prepared_post->job_description;
 		$prepared_post->post_name = $prepared_post->title;
+		$prepared_post->post_author  = 1;
+		
 		
 		
 		//$job_description =  $prepared_post->job_description;
@@ -908,11 +910,48 @@ class WP_REST_job_listing_Controller extends WP_REST_Controller {
 		if(isset($prepared_post->job_notifications_email)){
 			$job_notifications_email =  $prepared_post->job_notifications_email;
 			update_post_meta($post_id,'job_notifications_email',$job_notifications_email);
-		}if(isset($prepared_post->job_filing_email)){
+		}
+
+		if(isset($prepared_post->job_filing_email)){
 			$job_filing_email =  $prepared_post->job_filing_email;
 			update_post_meta($post_id,'job_filing_email',$job_filing_email);
 		}
 
+		if(isset($prepared_post->application)){
+			$application =  $prepared_post->application;
+			update_post_meta($post_id,'_application',$application);
+		}else{
+			update_post_meta($post_id,'_application','http://simplersdev.local/jobs/');
+		}
+
+		if(isset($prepared_post->company_website)){
+			$company_website =  $prepared_post->company_website;
+			update_post_meta($post_id,'_company_website',$company_website);
+		}else{
+			update_post_meta($post_id,'_company_website','http://simplersdev.local/');
+		}
+
+		if(isset($prepared_post->company_twitter)){
+			$company_twitter =  $prepared_post->company_twitter;
+			update_post_meta($post_id,'_company_twitter',$company_twitter);
+		}
+		if(isset($prepared_post->company_name)){
+			$company_name =  $prepared_post->company_name;
+			update_post_meta($post_id,'_company_name',$company_name);
+		}else{
+			update_post_meta($post_id,'_company_name','Simple Recruitment '.$job_branch);
+		}
+		if(isset($prepared_post->company_tagline)){
+			$company_tagline =  $prepared_post->company_tagline;
+			update_post_meta($post_id,'_company_tagline',$company_tagline);
+		}
+		if(isset($prepared_post->company_video)){
+			$company_video =  $prepared_post->company_video;
+			update_post_meta($post_id,'_company_video',$company_video);
+		}
+		update_post_meta($post_id,'_thumbnail_id','2887');
+		
+		
 
 		$prepared_post->job_city;
 		$prepared_post->job_postalcode;
@@ -923,9 +962,42 @@ class WP_REST_job_listing_Controller extends WP_REST_Controller {
 			update_post_meta($post_id,'_job_location',$prepared_post->job_city.','.$prepared_post->job_postalcode.','.$prepared_post->job_state);
 		}
 
-		update_post_meta($post_id,'_application','http://simplersdev.local/jobs/');
-		update_post_meta($post_id,'_company_website','http://simplersdev.local/');
-		update_post_meta($post_id,'_company_name','Simple Recruitment Mansfield');
+
+
+		$insert_custom_tbl_array = array(
+			"id" => '',
+			"job_ref_id" => $post_id,
+			"form_sequence" => $job_title,
+			"form_three" => $job_forms_completed,
+			"job_cpt_id" => '',
+			"job_category" => $job_category,
+			"branch" => $job_branch,
+			"sharepoint_email" => $job_city,
+			"consultant_email" => $job_state,
+			"branch_phone" => $job_display_phone_number,
+			"display_message" => $job_display_message,
+			"entry_id" => '',
+			"date_of_entry" => ''
+
+			// "job_description" => $job_description,
+			// "job_display_phone_number" => $job_display_phone_number,
+			// "job_display_message" => $job_display_message,
+			// "job_branch"=>$job_branch,
+			// "job_Internal_reference"=>$job_Internal_reference,
+			// "job_forms_completed"=>$job_forms_completed,
+			// "job_notifications_email" => $job_notifications_email,
+			// "job_filing_email" => $job_filing_email,
+		);
+
+		
+		$obj = new Job_Listing();
+		$prepared_post->jobid = $post_id;
+		//$status_of_insert =  $obj->insert($insert_custom_tbl_array);
+		$status_of_insert = "";
+		if(!$status_of_insert){
+			return new WP_Error( 'rest_table', __( 'Job is create but not added on custom table' ), array( 'status' => 401 ) );
+		}
+		
 
 
 		if ( is_wp_error( $post_id ) ) {
@@ -1597,10 +1669,48 @@ class WP_REST_job_listing_Controller extends WP_REST_Controller {
 			}
 		}
 
-		
-
-		
-
+		if ( ! empty( $schema['properties']['application'] ) && isset( $request['application'] ) ) {
+			if ( is_string( $request['application'] ) ) {
+				$prepared_post->application = sanitize_text_field($request['application']);
+			} elseif ( isset( $request['application']['raw'] ) ) {
+				$prepared_post->application = $request['application']['raw'];
+			}
+		}
+		if ( ! empty( $schema['properties']['company_website'] ) && isset( $request['company_website'] ) ) {
+			if ( is_string( $request['company_website'] ) ) {
+				$prepared_post->company_website = sanitize_text_field($request['company_website']);
+			} elseif ( isset( $request['company_website']['raw'] ) ) {
+				$prepared_post->company_website = $request['company_website']['raw'];
+			}
+		}
+		if ( ! empty( $schema['properties']['company_twitter'] ) && isset( $request['company_twitter'] ) ) {
+			if ( is_string( $request['company_twitter'] ) ) {
+				$prepared_post->company_twitter = sanitize_text_field($request['company_twitter']);
+			} elseif ( isset( $request['company_twitter']['raw'] ) ) {
+				$prepared_post->company_twitter = $request['company_twitter']['raw'];
+			}
+		}
+		if ( ! empty( $schema['properties']['company_name'] ) && isset( $request['company_name'] ) ) {
+			if ( is_string( $request['company_name'] ) ) {
+				$prepared_post->company_name = sanitize_text_field($request['company_name']);
+			} elseif ( isset( $request['company_name']['raw'] ) ) {
+				$prepared_post->company_name = $request['company_name']['raw'];
+			}
+		}
+		if ( ! empty( $schema['properties']['company_tagline'] ) && isset( $request['company_tagline'] ) ) {
+			if ( is_string( $request['company_tagline'] ) ) {
+				$prepared_post->company_tagline = sanitize_text_field($request['company_tagline']);
+			} elseif ( isset( $request['company_tagline']['raw'] ) ) {
+				$prepared_post->company_tagline = $request['company_tagline']['raw'];
+			}
+		}
+		if ( ! empty( $schema['properties']['company_video'] ) && isset( $request['company_video'] ) ) {
+			if ( is_string( $request['company_video'] ) ) {
+				$prepared_post->company_video = sanitize_text_field($request['company_video']);
+			} elseif ( isset( $request['company_video']['raw'] ) ) {
+				$prepared_post->company_video = $request['company_video']['raw'];
+			}
+		}
 
 		// Post excerpt.
 		if ( ! empty( $schema['properties']['excerpt'] ) && isset( $request['excerpt'] ) ) {
@@ -1844,9 +1954,9 @@ class WP_REST_job_listing_Controller extends WP_REST_Controller {
 				}
 				break;
 			default:
-				if ( ! get_post_status_object( $post_status ) ) {
-					$post_status = 'draft';
-				}
+				// if ( ! get_post_status_object( $post_status ) ) {
+				// 	$post_status = 'draft';
+				// }
 				break;
 		}
 
@@ -2707,6 +2817,42 @@ class WP_REST_job_listing_Controller extends WP_REST_Controller {
 				),
 				'job_filing_email'     => array(
 					'description' => __( "Please enter Postalcode" ),
+					'type'        => array( 'string', 'null' ),
+					'format'      => 'string',
+					'context'     => array( 'view', 'edit', 'embed' ),
+				),
+				'application'     => array(
+					'description' => __( "Please enter application" ),
+					'type'        => array( 'string', 'null' ),
+					'format'      => 'string',
+					'context'     => array( 'view', 'edit', 'embed' ),
+				),
+				'company_website'     => array(
+					'description' => __( "Please enter company website" ),
+					'type'        => array( 'string', 'null' ),
+					'format'      => 'string',
+					'context'     => array( 'view', 'edit', 'embed' ),
+				),
+				'company_twitter'     => array(
+					'description' => __( "Please enter company twitter" ),
+					'type'        => array( 'string', 'null' ),
+					'format'      => 'string',
+					'context'     => array( 'view', 'edit', 'embed' ),
+				),
+				'company_name'     => array(
+					'description' => __( "Please enter company name" ),
+					'type'        => array( 'string', 'null' ),
+					'format'      => 'string',
+					'context'     => array( 'view', 'edit', 'embed' ),
+				),
+				'company_tagline'     => array(
+					'description' => __( "Please enter company tagline" ),
+					'type'        => array( 'string', 'null' ),
+					'format'      => 'string',
+					'context'     => array( 'view', 'edit', 'embed' ),
+				),
+				'company_video'     => array(
+					'description' => __( "Please enter company video" ),
 					'type'        => array( 'string', 'null' ),
 					'format'      => 'string',
 					'context'     => array( 'view', 'edit', 'embed' ),
